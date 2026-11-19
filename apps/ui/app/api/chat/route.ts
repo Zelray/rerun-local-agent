@@ -2,6 +2,7 @@ import { actorFromContext, callableEngineAgentIds, type Actor } from '@/app/api/
 import { requireWorkspaceContext } from '@/app/api/_auth/ownership'
 import { createSessionRow, ensureSessionRow, findGeneralSession, GeneralAlreadyOpenError, getExistingSession, recordMessageSent, resolveAgentTarget } from '@/app/api/_services/chat.service'
 import { messageAuthorOf } from '@/app/api/_services/me.service'
+import { requestTimeZone } from '@/lib/i18n/request-locale'
 import type { Database } from '@/app/api/database.types'
 import { generateSessionTitle } from '@/lib/ai/generate-title'
 import { embedTextShared } from '@/lib/services/embed'
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
     let workspaceId: number
     try {
         const ctx = await requireWorkspaceContext()
-        author = messageAuthorOf(ctx)
+        // The zone only helps the Chief of Staff: a request it cannot be read from still sends.
+        author = messageAuthorOf(ctx, await requestTimeZone().catch(() => undefined))
         actor = actorFromContext(ctx)
         workspaceId = ctx.workspace.id
         // Read alongside the body and awaited inside the engine call's try: a failure fails the send
