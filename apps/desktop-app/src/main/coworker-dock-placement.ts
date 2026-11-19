@@ -1,4 +1,4 @@
-import type { CoworkerDockEdge } from '@rerun/contracts'
+import { COWORKER_DOCK_MIN_HEIGHT, type CoworkerDockEdge } from '@rerun/contracts'
 import type { StoredCoworkerDock } from './settings'
 
 // Where the coworker dock stands, without Electron: the window is a strip as tall as the display's
@@ -10,13 +10,21 @@ export const DOCK_WINDOW_WIDTH = 260
 // keeps when it follows the pointer.
 export const DOCK_DRAG_MARGIN = 40
 
+const DOCK_MAX_HEIGHT = 10_000
+
 type Area = { x: number; y: number; width: number; height: number }
 type DisplayLike = { id: number; workArea: Area }
 
-export type DockPlacement = { enabled: boolean; edge: CoworkerDockEdge; y: number; collapsed: boolean; displayId: number | null }
+export type DockPlacement = { enabled: boolean; edge: CoworkerDockEdge; y: number; maxHeight: number | null; collapsed: boolean; displayId: number | null }
 
-function clamp01(value: number): number {
+export function clamp01(value: number): number {
     return Math.min(1, Math.max(0, value))
+}
+
+// Null, the rail grows with its coworkers up to the screen.
+export function dockMaxHeight(value: unknown): number | null {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return null
+    return Math.round(Math.min(DOCK_MAX_HEIGHT, Math.max(COWORKER_DOCK_MIN_HEIGHT, value)))
 }
 
 export function storedDockPlacement(stored: StoredCoworkerDock | undefined): DockPlacement {
@@ -25,6 +33,7 @@ export function storedDockPlacement(stored: StoredCoworkerDock | undefined): Doc
         enabled: stored?.enabled !== false,
         edge: stored?.edge === 'left' ? 'left' : 'right',
         y,
+        maxHeight: dockMaxHeight(stored?.maxHeight),
         collapsed: stored?.collapsed === true,
         displayId: typeof stored?.displayId === 'number' ? stored.displayId : null,
     }
@@ -41,8 +50,10 @@ export function dockBounds(workArea: Area, edge: CoworkerDockEdge): Area {
 }
 
 // Let go on the left half of a display, it hugs the left edge; its height follows the pointer.
-export function dropPlacement(point: { x: number; y: number }, workArea: Area): { edge: CoworkerDockEdge; y: number } {
+// `railY`: where the page moved the rail along the edge, kept as it is; without it, from the pointer.
+export function dropPlacement(point: { x: number; y: number }, workArea: Area, railY: number | null = null): { edge: CoworkerDockEdge; y: number } {
     const edge: CoworkerDockEdge = point.x < workArea.x + workArea.width / 2 ? 'left' : 'right'
+    if (railY !== null) return { edge, y: clamp01(railY) }
     const travel = Math.max(1, workArea.height - DOCK_DRAG_MARGIN * 2)
     return { edge, y: clamp01((point.y - workArea.y - DOCK_DRAG_MARGIN) / travel) }
 }

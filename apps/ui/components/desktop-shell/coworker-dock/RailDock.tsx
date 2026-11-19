@@ -27,7 +27,7 @@ function FoldedTab({ coworkers, edge, onToggleCollapsed }: Pick<DockProps, 'cowo
 export function RailDock({ coworkers, edge, collapsed, createBlockedReason, onOpen, onCreate, onToggleCollapsed, onGrab }: DockProps) {
     if (collapsed) return <FoldedTab coworkers={coworkers} edge={edge} onToggleCollapsed={onToggleCollapsed} />
     return (
-        <div className={cn('flex max-h-full flex-col items-center gap-1 px-1 pt-1 pb-1.5', SURFACE, edge === 'right' ? 'rounded-l-2xl border-r-0' : 'rounded-r-2xl border-l-0')}>
+        <div className={cn('flex max-h-full min-h-0 flex-col items-center gap-1 px-1 pt-1 pb-1.5', SURFACE, edge === 'right' ? 'rounded-l-2xl border-r-0' : 'rounded-r-2xl border-l-0')}>
             <DockGrip onGrab={onGrab} onToggleCollapsed={onToggleCollapsed} />
             <ScrollFade fadeSize={28} className="min-h-0 overscroll-contain [scrollbar-width:none]">
                 <div className="flex flex-col items-center gap-0.5">
